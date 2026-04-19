@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cálculo de Valuation</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .info-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.05);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .linha-acoes {
+      margin: 14px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secundario {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="box">
+    <nav class="menu-topo">
+      <button class="menu-btn ativo" onclick="mostrarTela('mercado', this)">
+        Valor de Mercado
+      </button>
+      <button class="menu-btn" onclick="mostrarTela('pl', this)">
+        P/L
+      </button>
+      <button class="menu-btn" onclick="mostrarTela('ev', this)">
+        EV / EBITDA
+      </button>
+      <button class="menu-btn" onclick="mostrarTela('receita', this)">
+        Receita
+      </button>
+      <button class="menu-btn" onclick="mostrarTela('barata', this)">
+        Está barata?
+      </button>
+      <button class="menu-btn" onclick="mostrarTela('preco-teto', this)">
+        Preço Teto
+      </button>
+    </nav>
+
+    <div id="tela-mercado" class="tela ativa">
+      <h2>Cálculo de Valuation por Valor de Mercado</h2>
+
+      <div class="linha-valores">
+        <div class="campo">
+          <label for="precoAcao">Preço da ação (R$)</label>
+          <input type="text" id="precoAcao" placeholder="Ex: 48,32">
+        </div>
+
+        <div class="campo">
+          <label for="numeroAcoes">Número de ações</label>
+          <input type="text" id="numeroAcoes" placeholder="Ex: 13.044.496.930">
+        </div>
+      </div>
+
+      <div class="info-box">
+        Método usado:<br>
+        <b>Valuation = Preço da ação × Número de ações</b>
+      </div>
+
+      <button onclick="calcularValorMercado()">Calcular valuation</button>
+
+      <div class="resultado" id="resMercado"></div>
+    </div>
+
+    <div id="tela-pl" class="tela">
+      <h2>Cálculo de Valuation por P/L</h2>
+
+      <div class="linha-valores">
+        <div class="campo">
+          <label for="lucroLiquido">Lucro líquido anual (R$)</label>
+          <input type="text" id="lucroLiquido" placeholder="Ex: 124.000.000.000,00">
+        </div>
+
+        <div class="campo">
+          <label for="plMultiplo">P/L</label>
+          <input type="text" id="plMultiplo" placeholder="Ex: 5,42">
+        </div>
+      </div>
+
+      <div class="info-box">
+        Método usado:<br>
+        <b>Valuation = Lucro líquido × P/L</b>
+      </div>
+
+      <button onclick="calcularPL()">Calcular valuation</button>
+
+      <div class="resultado" id="resPL"></div>
+    </div>
+
+    <div id="tela-ev" class="tela">
+      <h2>Cálculo de Valuation por EV / EBITDA</h2>
+
+      <div class="linha-valores">
+        <div class="campo">
+          <label for="ebitda">EBITDA (R$)</label>
+          <input type="text" id="ebitda" placeholder="Ex: 230.000.000.000,00">
+        </div>
+
+        <div class="campo">
+          <label for="evMultiplo">EV / EBITDA</label>
+          <input type="text" id="evMultiplo" placeholder="Ex: 4,19">
+        </div>
+      </div>
+
+      <div class="linha-valores">
+        <div class="campo">
+          <label for="dividaLiquida">Dívida líquida (R$) — opcional</label>
+          <input type="text" id="dividaLiquida" placeholder="Ex: 333.000.000.000,00">
+        </div>
+      </div>
+
+      <div class="info-box">
+        Método usado:<br>
+        <b>Enterprise Value = EBITDA × múltiplo EV / EBITDA</b><br>
+        <b>Equity Value = Enterprise Value − Dívida líquida</b>
+      </div>
+
+      <button onclick="calcularEV()">Calcular valuation</button>
+
+      <div class="resultado" id="resEV"></div>
+    </div>
+
+    <div id="tela-receita" class="tela">
+      <h2>Cálculo de Valuation por Receita</h2>
+
+      <div class="linha-valores">
+        <div class="campo">
+          <label for="receitaAnual">Receita anual (R$)</label>
+          <input type="text" id="receitaAnual" placeholder="Ex: 500.000.000,00">
+        </div>
+
+        <div class="campo">
+          <label for="receitaMultiplo">Múltiplo de receita (PSR ou P/S)</label>
+          <input type="text" id="receitaMultiplo" placeholder="Ex: 3,50">
+        </div>
+      </div>
+
+      <div class="info-box">
+        Método usado:<br>
+        <b>Valuation = Receita anual × múltiplo</b>
+      </div>
+
+      <button onclick="calcularReceita()">Calcular valuation</button>
+
+      <div class="resultado" id="resReceita"></div>
+    </div>
+
+    <div id="tela-barata" class="tela">
+      <h2>Análise: Empresa está barata ou não?</h2>
+
+      <div class="linha-ir">
+        <label for="tipoEmpresa">Tipo de empresa</label>
+        <select id="tipoEmpresa" onchange="alternarTipoEmpresa()">
+          <option value="industrial" selected>Industrial</option>
+          <option value="banco">Banco</option>
+        </select>
+      </div>
+
+      <div id="blocoIndustrial">
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="plEmpresa">P/L da empresa</label>
+            <input type="text" id="plEmpresa" placeholder="Ex: 5,42">
+          </div>
+
+          <div class="campo">
+            <label for="plSetor">P/L médio do setor</label>
+            <input type="text" id="plSetor" placeholder="Ex: 8,50">
+          </div>
+        </div>
+
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="evEmpresa">EV / EBITDA da empresa</label>
+            <input type="text" id="evEmpresa" placeholder="Ex: 4,19">
+          </div>
+
+          <div class="campo">
+            <label for="evSetor">EV / EBITDA médio do setor</label>
+            <input type="text" id="evSetor" placeholder="Ex: 6,20">
+          </div>
+        </div>
+
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="psEmpresa">P/S da empresa</label>
+            <input type="text" id="psEmpresa" placeholder="Ex: 1,28">
+          </div>
+
+          <div class="campo">
+            <label for="psSetor">P/S médio do setor</label>
+            <input type="text" id="psSetor" placeholder="Ex: 1,60">
+          </div>
+        </div>
+
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="roeEmpresa">ROE da empresa (%)</label>
+            <input type="text" id="roeEmpresa" placeholder="Ex: 28,50">
+          </div>
+
+          <div class="campo">
+            <label for="margemEmpresa">Margem líquida (%)</label>
+            <input type="text" id="margemEmpresa" placeholder="Ex: 22,40">
+          </div>
+        </div>
+
+        <div class="info-box">
+          Método usado:<br>
+          <b>1.</b> Comparar os múltiplos da empresa com a média do setor.<br>
+          <b>2.</b> Quanto menores forem <b>P/L</b>, <b>EV / EBITDA</b> e <b>P/S</b> em relação ao setor, maior a chance de estar barata.<br>
+          <b>3.</b> Usar <b>ROE</b> e <b>margem líquida</b> para ver se a qualidade da empresa é boa ou ruim.<br>
+          <b>4.</b> Resultado final: barata, justa, cara ou barata com risco.
+        </div>
+      </div>
+
+      <div id="blocoBanco" style="display: none;">
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="pvpBanco">P/VP do banco</label>
+            <input type="text" id="pvpBanco" placeholder="Ex: 0,74">
+          </div>
+
+          <div class="campo">
+            <label for="pvpSetorBanco">P/VP médio do setor bancário</label>
+            <input type="text" id="pvpSetorBanco" placeholder="Ex: 1,20">
+          </div>
+        </div>
+
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="plBanco">P/L do banco</label>
+            <input type="text" id="plBanco" placeholder="Ex: 4,80">
+          </div>
+
+          <div class="campo">
+            <label for="plSetorBanco">P/L médio do setor bancário</label>
+            <input type="text" id="plSetorBanco" placeholder="Ex: 8,50">
+          </div>
+        </div>
+
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="roeBanco">ROE do banco (%)</label>
+            <input type="text" id="roeBanco" placeholder="Ex: 21,30">
+          </div>
+        </div>
+
+        <div class="info-box">
+          Método usado:<br>
+          <b>1.</b> Para bancos, usar <b>P/VP</b>, <b>P/L</b> e <b>ROE</b>.<br>
+          <b>2.</b> Quanto menores forem <b>P/VP</b> e <b>P/L</b> em relação ao setor, maior a chance de desconto.<br>
+          <b>3.</b> Um <b>ROE alto</b> ajuda a mostrar que o banco é eficiente.<br>
+          <b>4.</b> Resultado final: barato, justo, caro ou barato com risco.
+        </div>
+      </div>
+
+      <button onclick="analisarSeEstaBarata()">Analisar empresa</button>
+
+      <div class="resultado" id="resBarata"></div>
+    </div>
+
+    <div id="tela-preco-teto" class="tela">
+      <h2>Cálculo de Preço Teto</h2>
+
+      <div class="linha-ir">
+        <label for="tipoPrecoTeto">Tipo de empresa</label>
+        <select id="tipoPrecoTeto" onchange="alternarPrecoTeto()">
+          <option value="industrial" selected>Industrial</option>
+          <option value="banco">Banco</option>
+        </select>
+      </div>
+
+      <div id="blocoPrecoTetoIndustrial">
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="lpaTeto">LPA (lucro por ação)</label>
+            <input type="text" id="lpaTeto" placeholder="Ex: 8,54">
+          </div>
+
+          <div class="campo">
+            <label for="plJustoTeto">P/L justo</label>
+            <input type="text" id="plJustoTeto" placeholder="Ex: 8,00">
+          </div>
+        </div>
+
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="descontoTetoIndustrial">Margem de segurança (%) — opcional</label>
+            <input type="text" id="descontoTetoIndustrial" placeholder="Ex: 20,00">
+          </div>
+        </div>
+
+        <div class="info-box">
+          Método usado:<br>
+          <b>Preço teto bruto = LPA × P/L justo</b><br>
+          <b>Preço teto final = preço teto bruto × (1 − margem de segurança)</b>
+        </div>
+      </div>
+
+      <div id="blocoPrecoTetoBanco" style="display: none;">
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="vpaTetoBanco">VPA (valor patrimonial por ação)</label>
+            <input type="text" id="vpaTetoBanco" placeholder="Ex: 50,00">
+          </div>
+
+          <div class="campo">
+            <label for="pvpJustoTetoBanco">P/VP justo</label>
+            <input type="text" id="pvpJustoTetoBanco" placeholder="Ex: 1,00">
+          </div>
+        </div>
+
+        <div class="linha-valores">
+          <div class="campo">
+            <label for="descontoTetoBanco">Margem de segurança (%) — opcional</label>
+            <input type="text" id="descontoTetoBanco" placeholder="Ex: 20,00">
+          </div>
+        </div>
+
+        <div class="info-box">
+          Método usado:<br>
+          <b>Preço teto bruto = VPA × P/VP justo</b><br>
+          <b>Preço teto final = preço teto bruto × (1 − margem de segurança)</b>
+        </div>
+      </div>
+
+      <button onclick="calcularPrecoTeto()">Calcular preço teto</button>
+
+      <div class="resultado" id="resPrecoTeto"></div>
+    </div>
+  </div>
+
+  <script>
+    function mostrarTela(tela, botao) {
+      document.getElementById("tela-mercado").classList.remove("ativa");
+      document.getElementById("tela-pl").classList.remove("ativa");
+      document.getElementById("tela-ev").classList.remove("ativa");
+      document.getElementById("tela-receita").classList.remove("ativa");
+      document.getElementById("tela-barata").classList.remove("ativa");
+      document.getElementById("tela-preco-teto").classList.remove("ativa");
+
+      document.querySelectorAll(".menu-btn").forEach(btn => {
+        btn.classList.remove("ativo");
+      });
+
+      if (tela === "mercado") {
+        document.getElementById("tela-mercado").classList.add("ativa");
+      } else if (tela === "pl") {
+        document.getElementById("tela-pl").classList.add("ativa");
+      } else if (tela === "ev") {
+        document.getElementById("tela-ev").classList.add("ativa");
+      } else if (tela === "receita") {
+        document.getElementById("tela-receita").classList.add("ativa");
+      } else if (tela === "barata") {
+        document.getElementById("tela-barata").classList.add("ativa");
+      } else if (tela === "preco-teto") {
+        document.getElementById("tela-preco-teto").classList.add("ativa");
+      }
+
+      botao.classList.add("ativo");
+    }
+
+    function alternarTipoEmpresa() {
+      const tipo = document.getElementById("tipoEmpresa").value;
+      const blocoIndustrial = document.getElementById("blocoIndustrial");
+      const blocoBanco = document.getElementById("blocoBanco");
+      const res = document.getElementById("resBarata");
+
+      if (tipo === "industrial") {
+        blocoIndustrial.style.display = "block";
+        blocoBanco.style.display = "none";
+      } else {
+        blocoIndustrial.style.display = "none";
+        blocoBanco.style.display = "block";
+      }
+
+      res.innerHTML = "";
+    }
+
+    function alternarPrecoTeto() {
+      const tipo = document.getElementById("tipoPrecoTeto").value;
+      const blocoIndustrial = document.getElementById("blocoPrecoTetoIndustrial");
+      const blocoBanco = document.getElementById("blocoPrecoTetoBanco");
+      const res = document.getElementById("resPrecoTeto");
+
+      if (tipo === "industrial") {
+        blocoIndustrial.style.display = "block";
+        blocoBanco.style.display = "none";
+      } else {
+        blocoIndustrial.style.display = "none";
+        blocoBanco.style.display = "block";
+      }
+
+      res.innerHTML = "";
+    }
+
+    function parseNumeroBR(valor) {
+      if (!valor) return NaN;
+      return parseFloat(
+        valor
+          .toString()
+          .trim()
+          .replace(/\./g, "")
+          .replace(",", ".")
+      );
+    }
+
+    function formatarNumeroBR(valor, casas = 2) {
+      return Number(valor).toLocaleString("pt-BR", {
+        minimumFractionDigits: casas,
+        maximumFractionDigits: casas
+      });
+    }
+
+    function formatarMoedaBR(valor) {
+      return Number(valor).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      });
+    }
+
+    function formatarInputNumeroBR(input) {
+      let valor = input.value.replace(/\D/g, "");
+
+      if (!valor) {
+        input.value = "";
+        return;
+      }
+
+      valor = (parseInt(valor, 10) / 100).toFixed(2) + "";
+      valor = valor.replace(".", ",");
+
+      const partes = valor.split(",");
+      partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+      input.value = partes.join(",");
+    }
+
+    function formatarInputInteiroBR(input) {
+      let valor = input.value.replace(/\D/g, "");
+
+      if (!valor) {
+        input.value = "";
+        return;
+      }
+
+      input.value = valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function formatarInputPercentualBR(input) {
+      let valor = input.value.replace(/\D/g, "");
+
+      if (!valor) {
+        input.value = "";
+        return;
+      }
+
+      valor = (parseInt(valor, 10) / 100).toFixed(2) + "";
+      valor = valor.replace(".", ",");
+
+      let partes = valor.split(",");
+      partes[0] = String(parseInt(partes[0], 10));
+      if (partes[0] === "NaN") partes[0] = "0";
+
+      input.value = partes.join(",");
+    }
+
+    function calcularValorMercado() {
+      const precoAcao = parseNumeroBR(document.getElementById("precoAcao").value);
+      const numeroAcoes = parseNumeroBR(document.getElementById("numeroAcoes").value);
+
+      if (isNaN(precoAcao) || isNaN(numeroAcoes)) {
+        document.getElementById("resMercado").innerHTML = "Preencha o preço da ação e o número de ações.";
+        return;
+      }
+
+      const valuation = precoAcao * numeroAcoes;
+
+      document.getElementById("resMercado").innerHTML = `
+        Valuation estimado: <b>${formatarMoedaBR(valuation)}</b><br><br>
+        Fórmula aplicada:<br>
+        ${formatarMoedaBR(precoAcao)} × ${formatarNumeroBR(numeroAcoes, 0)} = ${formatarMoedaBR(valuation)}
+      `;
+    }
+
+    function calcularPL() {
+      const lucroLiquido = parseNumeroBR(document.getElementById("lucroLiquido").value);
+      const plMultiplo = parseNumeroBR(document.getElementById("plMultiplo").value);
+
+      if (isNaN(lucroLiquido) || isNaN(plMultiplo)) {
+        document.getElementById("resPL").innerHTML = "Preencha o lucro líquido e o P/L.";
+        return;
+      }
+
+      const valuation = lucroLiquido * plMultiplo;
+
+      document.getElementById("resPL").innerHTML = `
+        Valuation estimado: <b>${formatarMoedaBR(valuation)}</b><br><br>
+        Fórmula aplicada:<br>
+        ${formatarMoedaBR(lucroLiquido)} × ${formatarNumeroBR(plMultiplo)} = ${formatarMoedaBR(valuation)}
+      `;
+    }
+
+    function calcularEV() {
+      const ebitda = parseNumeroBR(document.getElementById("ebitda").value);
+      const evMultiplo = parseNumeroBR(document.getElementById("evMultiplo").value);
+      const dividaLiquidaTexto = document.getElementById("dividaLiquida").value.trim();
+      const dividaLiquida = parseNumeroBR(dividaLiquidaTexto);
+
+      if (isNaN(ebitda) || isNaN(evMultiplo)) {
+        document.getElementById("resEV").innerHTML = "Preencha o EBITDA e o múltiplo EV / EBITDA.";
+        return;
+      }
+
+      const enterpriseValue = ebitda * evMultiplo;
+
+      let texto = `
+        Enterprise Value: <b>${formatarMoedaBR(enterpriseValue)}</b><br>
+      `;
+
+      if (dividaLiquidaTexto !== "" && !isNaN(dividaLiquida)) {
+        const equityValue = enterpriseValue - dividaLiquida;
+
+        texto += `
+          Equity Value: <b>${formatarMoedaBR(equityValue)}</b><br><br>
+          Fórmula aplicada:<br>
+          EV = ${formatarMoedaBR(ebitda)} × ${formatarNumeroBR(evMultiplo)} = ${formatarMoedaBR(enterpriseValue)}<br>
+          Equity = ${formatarMoedaBR(enterpriseValue)} − ${formatarMoedaBR(dividaLiquida)} = ${formatarMoedaBR(equityValue)}
+        `;
+      } else {
+        texto += `
+          <br>Fórmula aplicada:<br>
+          EV = ${formatarMoedaBR(ebitda)} × ${formatarNumeroBR(evMultiplo)} = ${formatarMoedaBR(enterpriseValue)}
+        `;
+      }
+
+      document.getElementById("resEV").innerHTML = texto;
+    }
+
+    function calcularReceita() {
+      const receitaAnual = parseNumeroBR(document.getElementById("receitaAnual").value);
+      const receitaMultiplo = parseNumeroBR(document.getElementById("receitaMultiplo").value);
+
+      if (isNaN(receitaAnual) || isNaN(receitaMultiplo)) {
+        document.getElementById("resReceita").innerHTML = "Preencha a receita anual e o múltiplo.";
+        return;
+      }
+
+      const valuation = receitaAnual * receitaMultiplo;
+
+      document.getElementById("resReceita").innerHTML = `
+        Valuation estimado: <b>${formatarMoedaBR(valuation)}</b><br><br>
+        Fórmula aplicada:<br>
+        ${formatarMoedaBR(receitaAnual)} × ${formatarNumeroBR(receitaMultiplo)} = ${formatarMoedaBR(valuation)}
+      `;
+    }
+
+    function analisarSeEstaBarata() {
+      const tipo = document.getElementById("tipoEmpresa").value;
+
+      if (tipo === "industrial") {
+        analisarIndustrial();
+      } else {
+        analisarBanco();
+      }
+    }
+
+    function analisarIndustrial() {
+      const plEmpresa = parseNumeroBR(document.getElementById("plEmpresa").value);
+      const plSetor = parseNumeroBR(document.getElementById("plSetor").value);
+      const evEmpresa = parseNumeroBR(document.getElementById("evEmpresa").value);
+      const evSetor = parseNumeroBR(document.getElementById("evSetor").value);
+      const psEmpresa = parseNumeroBR(document.getElementById("psEmpresa").value);
+      const psSetor = parseNumeroBR(document.getElementById("psSetor").value);
+      const roeEmpresa = parseNumeroBR(document.getElementById("roeEmpresa").value);
+      const margemEmpresa = parseNumeroBR(document.getElementById("margemEmpresa").value);
+
+      if (
+        isNaN(plEmpresa) || isNaN(plSetor) ||
+        isNaN(evEmpresa) || isNaN(evSetor) ||
+        isNaN(psEmpresa) || isNaN(psSetor) ||
+        isNaN(roeEmpresa) || isNaN(margemEmpresa)
+      ) {
+        document.getElementById("resBarata").innerHTML = "Preencha todos os campos da análise industrial.";
+        return;
+      }
+
+      let pontosBarata = 0;
+      let pontosQualidade = 0;
+      let detalhes = [];
+
+      const descontoPL = ((plSetor - plEmpresa) / plSetor) * 100;
+      const descontoEV = ((evSetor - evEmpresa) / evSetor) * 100;
+      const descontoPS = ((psSetor - psEmpresa) / psSetor) * 100;
+
+      if (plEmpresa < plSetor) {
+        pontosBarata += 1;
+        detalhes.push(`P/L abaixo do setor em <b>${formatarNumeroBR(descontoPL)}%</b>`);
+      } else if (plEmpresa > plSetor) {
+        detalhes.push(`P/L acima do setor em <b>${formatarNumeroBR(Math.abs(descontoPL))}%</b>`);
+      } else {
+        detalhes.push(`P/L igual ao setor`);
+      }
+
+      if (evEmpresa < evSetor) {
+        pontosBarata += 1;
+        detalhes.push(`EV / EBITDA abaixo do setor em <b>${formatarNumeroBR(descontoEV)}%</b>`);
+      } else if (evEmpresa > evSetor) {
+        detalhes.push(`EV / EBITDA acima do setor em <b>${formatarNumeroBR(Math.abs(descontoEV))}%</b>`);
+      } else {
+        detalhes.push(`EV / EBITDA igual ao setor`);
+      }
+
+      if (psEmpresa < psSetor) {
+        pontosBarata += 1;
+        detalhes.push(`P/S abaixo do setor em <b>${formatarNumeroBR(descontoPS)}%</b>`);
+      } else if (psEmpresa > psSetor) {
+        detalhes.push(`P/S acima do setor em <b>${formatarNumeroBR(Math.abs(descontoPS))}%</b>`);
+      } else {
+        detalhes.push(`P/S igual ao setor`);
+      }
+
+      if (roeEmpresa >= 15) {
+        pontosQualidade += 1;
+        detalhes.push(`ROE forte: <b>${formatarNumeroBR(roeEmpresa)}%</b>`);
+      } else {
+        detalhes.push(`ROE fraco/modesto: <b>${formatarNumeroBR(roeEmpresa)}%</b>`);
+      }
+
+      if (margemEmpresa >= 10) {
+        pontosQualidade += 1;
+        detalhes.push(`Margem líquida boa: <b>${formatarNumeroBR(margemEmpresa)}%</b>`);
+      } else {
+        detalhes.push(`Margem líquida baixa: <b>${formatarNumeroBR(margemEmpresa)}%</b>`);
+      }
+
+      let classificacao = "";
+      let resumo = "";
+
+      if (pontosBarata === 3 && pontosQualidade === 2) {
+        classificacao = "MUITO BARATA";
+        resumo = "A empresa parece bem descontada e com boa qualidade.";
+      } else if (pontosBarata >= 2 && pontosQualidade >= 1) {
+        classificacao = "BARATA";
+        resumo = "A empresa parece descontada em boa parte dos múltiplos.";
+      } else if (pontosBarata >= 2 && pontosQualidade === 0) {
+        classificacao = "BARATA, MAS QUALIDADE FRACA";
+        resumo = "Os múltiplos estão baixos, mas a qualidade operacional não está boa.";
+      } else if (pontosBarata === 1 && pontosQualidade >= 1) {
+        classificacao = "PREÇO JUSTO";
+        resumo = "A empresa não parece muito descontada, mas também não parece cara.";
+      } else if (pontosBarata === 0 && pontosQualidade >= 1) {
+        classificacao = "CARA, MAS EMPRESA FORTE";
+        resumo = "A empresa está mais cara que o setor, porém os indicadores de qualidade ajudam.";
+      } else {
+        classificacao = "CARA";
+        resumo = "Os múltiplos não indicam desconto relevante.";
+      }
+
+      document.getElementById("resBarata").innerHTML = `
+        Resultado da análise: <b>${classificacao}</b><br><br>
+        ${resumo}<br><br>
+        Comparação com o setor:<br>
+        - ${detalhes[0]}<br>
+        - ${detalhes[1]}<br>
+        - ${detalhes[2]}<br>
+        - ${detalhes[3]}<br>
+        - ${detalhes[4]}<br><br>
+        Pontuação final:<br>
+        Múltiplos descontados: <b>${pontosBarata}/3</b><br>
+        Qualidade: <b>${pontosQualidade}/2</b>
+      `;
+    }
+
+    function analisarBanco() {
+      const pvpBanco = parseNumeroBR(document.getElementById("pvpBanco").value);
+      const pvpSetorBanco = parseNumeroBR(document.getElementById("pvpSetorBanco").value);
+      const plBanco = parseNumeroBR(document.getElementById("plBanco").value);
+      const plSetorBanco = parseNumeroBR(document.getElementById("plSetorBanco").value);
+      const roeBanco = parseNumeroBR(document.getElementById("roeBanco").value);
+
+      if (
+        isNaN(pvpBanco) || isNaN(pvpSetorBanco) ||
+        isNaN(plBanco) || isNaN(plSetorBanco) ||
+        isNaN(roeBanco)
+      ) {
+        document.getElementById("resBarata").innerHTML = "Preencha todos os campos da análise de banco.";
+        return;
+      }
+
+      let pontosBarata = 0;
+      let pontosQualidade = 0;
+      let detalhes = [];
+
+      const descontoPVP = ((pvpSetorBanco - pvpBanco) / pvpSetorBanco) * 100;
+      const descontoPL = ((plSetorBanco - plBanco) / plSetorBanco) * 100;
+
+      if (pvpBanco < pvpSetorBanco) {
+        pontosBarata += 1;
+        detalhes.push(`P/VP abaixo do setor em <b>${formatarNumeroBR(descontoPVP)}%</b>`);
+      } else if (pvpBanco > pvpSetorBanco) {
+        detalhes.push(`P/VP acima do setor em <b>${formatarNumeroBR(Math.abs(descontoPVP))}%</b>`);
+      } else {
+        detalhes.push(`P/VP igual ao setor`);
+      }
+
+      if (plBanco < plSetorBanco) {
+        pontosBarata += 1;
+        detalhes.push(`P/L abaixo do setor em <b>${formatarNumeroBR(descontoPL)}%</b>`);
+      } else if (plBanco > plSetorBanco) {
+        detalhes.push(`P/L acima do setor em <b>${formatarNumeroBR(Math.abs(descontoPL))}%</b>`);
+      } else {
+        detalhes.push(`P/L igual ao setor`);
+      }
+
+      if (roeBanco >= 18) {
+        pontosQualidade += 1;
+        detalhes.push(`ROE forte: <b>${formatarNumeroBR(roeBanco)}%</b>`);
+      } else {
+        detalhes.push(`ROE fraco/modesto: <b>${formatarNumeroBR(roeBanco)}%</b>`);
+      }
+
+      let classificacao = "";
+      let resumo = "";
+
+      if (pontosBarata === 2 && pontosQualidade === 1) {
+        classificacao = "MUITO BARATO";
+        resumo = "O banco parece descontado e ainda apresenta boa eficiência.";
+      } else if (pontosBarata >= 1 && pontosQualidade === 1) {
+        classificacao = "BARATO";
+        resumo = "O banco parece negociado com desconto e tem qualidade razoável ou forte.";
+      } else if (pontosBarata === 2 && pontosQualidade === 0) {
+        classificacao = "BARATO, MAS QUALIDADE FRACA";
+        resumo = "O preço parece baixo, mas o ROE não ajuda.";
+      } else if (pontosBarata === 1 && pontosQualidade === 0) {
+        classificacao = "PREÇO JUSTO";
+        resumo = "O banco tem algum desconto, mas a qualidade não reforça muito a tese.";
+      } else if (pontosBarata === 0 && pontosQualidade === 1) {
+        classificacao = "CARO, MAS BANCO FORTE";
+        resumo = "O banco parece caro frente ao setor, mas a eficiência operacional ajuda.";
+      } else {
+        classificacao = "CARO";
+        resumo = "O banco não parece descontado pelos múltiplos informados.";
+      }
+
+      document.getElementById("resBarata").innerHTML = `
+        Resultado da análise: <b>${classificacao}</b><br><br>
+        ${resumo}<br><br>
+        Comparação com o setor bancário:<br>
+        - ${detalhes[0]}<br>
+        - ${detalhes[1]}<br>
+        - ${detalhes[2]}<br><br>
+        Pontuação final:<br>
+        Desconto nos múltiplos: <b>${pontosBarata}/2</b><br>
+        Qualidade: <b>${pontosQualidade}/1</b>
+      `;
+    }
+
+    function calcularPrecoTeto() {
+      const tipo = document.getElementById("tipoPrecoTeto").value;
+
+      if (tipo === "industrial") {
+        calcularPrecoTetoIndustrial();
+      } else {
+        calcularPrecoTetoBanco();
+      }
+    }
+
+    function calcularPrecoTetoIndustrial() {
+      const lpa = parseNumeroBR(document.getElementById("lpaTeto").value);
+      const plJusto = parseNumeroBR(document.getElementById("plJustoTeto").value);
+      const descontoTexto = document.getElementById("descontoTetoIndustrial").value.trim();
+      const desconto = parseNumeroBR(descontoTexto);
+
+      if (isNaN(lpa) || isNaN(plJusto)) {
+        document.getElementById("resPrecoTeto").innerHTML = "Preencha o LPA e o P/L justo.";
+        return;
+      }
+
+      const precoTetoBruto = lpa * plJusto;
+      let texto = `
+        Preço teto bruto: <b>${formatarMoedaBR(precoTetoBruto)}</b><br>
+      `;
+
+      if (descontoTexto !== "" && !isNaN(desconto)) {
+        const precoTetoFinal = precoTetoBruto * (1 - desconto / 100);
+
+        texto += `
+          Preço teto com margem de segurança: <b>${formatarMoedaBR(precoTetoFinal)}</b><br><br>
+          Fórmula aplicada:<br>
+          Preço teto bruto = ${formatarNumeroBR(lpa)} × ${formatarNumeroBR(plJusto)} = ${formatarMoedaBR(precoTetoBruto)}<br>
+          Preço teto final = ${formatarMoedaBR(precoTetoBruto)} × (1 − ${formatarNumeroBR(desconto)}%) = ${formatarMoedaBR(precoTetoFinal)}
+        `;
+      } else {
+        texto += `
+          <br>Fórmula aplicada:<br>
+          Preço teto bruto = ${formatarNumeroBR(lpa)} × ${formatarNumeroBR(plJusto)} = ${formatarMoedaBR(precoTetoBruto)}
+        `;
+      }
+
+      document.getElementById("resPrecoTeto").innerHTML = texto;
+    }
+
+    function calcularPrecoTetoBanco() {
+      const vpa = parseNumeroBR(document.getElementById("vpaTetoBanco").value);
+      const pvpJusto = parseNumeroBR(document.getElementById("pvpJustoTetoBanco").value);
+      const descontoTexto = document.getElementById("descontoTetoBanco").value.trim();
+      const desconto = parseNumeroBR(descontoTexto);
+
+      if (isNaN(vpa) || isNaN(pvpJusto)) {
+        document.getElementById("resPrecoTeto").innerHTML = "Preencha o VPA e o P/VP justo.";
+        return;
+      }
+
+      const precoTetoBruto = vpa * pvpJusto;
+      let texto = `
+        Preço teto bruto: <b>${formatarMoedaBR(precoTetoBruto)}</b><br>
+      `;
+
+      if (descontoTexto !== "" && !isNaN(desconto)) {
+        const precoTetoFinal = precoTetoBruto * (1 - desconto / 100);
+
+        texto += `
+          Preço teto com margem de segurança: <b>${formatarMoedaBR(precoTetoFinal)}</b><br><br>
+          Fórmula aplicada:<br>
+          Preço teto bruto = ${formatarNumeroBR(vpa)} × ${formatarNumeroBR(pvpJusto)} = ${formatarMoedaBR(precoTetoBruto)}<br>
+          Preço teto final = ${formatarMoedaBR(precoTetoBruto)} × (1 − ${formatarNumeroBR(desconto)}%) = ${formatarMoedaBR(precoTetoFinal)}
+        `;
+      } else {
+        texto += `
+          <br>Fórmula aplicada:<br>
+          Preço teto bruto = ${formatarNumeroBR(vpa)} × ${formatarNumeroBR(pvpJusto)} = ${formatarMoedaBR(precoTetoBruto)}
+        `;
+      }
+
+      document.getElementById("resPrecoTeto").innerHTML = texto;
+    }
+
+    [
+      "precoAcao",
+      "lucroLiquido",
+      "ebitda",
+      "dividaLiquida",
+      "receitaAnual"
+    ].forEach(id => {
+      const campo = document.getElementById(id);
+      campo.addEventListener("input", function () {
+        formatarInputNumeroBR(this);
+      });
+    });
+
+    [
+      "plMultiplo",
+      "evMultiplo",
+      "receitaMultiplo",
+      "plEmpresa",
+      "plSetor",
+      "evEmpresa",
+      "evSetor",
+      "psEmpresa",
+      "psSetor",
+      "roeEmpresa",
+      "margemEmpresa",
+      "pvpBanco",
+      "pvpSetorBanco",
+      "plBanco",
+      "plSetorBanco",
+      "roeBanco",
+      "lpaTeto",
+      "plJustoTeto",
+      "descontoTetoIndustrial",
+      "vpaTetoBanco",
+      "pvpJustoTetoBanco",
+      "descontoTetoBanco"
+    ].forEach(id => {
+      const campo = document.getElementById(id);
+      campo.addEventListener("input", function () {
+        formatarInputPercentualBR(this);
+      });
+    });
+
+    document.getElementById("numeroAcoes").addEventListener("input", function () {
+      formatarInputInteiroBR(this);
+    });
+  </script>
+
+</body>
+
+</html>
